@@ -1,2 +1,2 @@
-# --Servidor-de-Explora-o-de-Labirintos
+# --Servidor-de-Exploracao-de-Labirintos
 Trabalho de redes
