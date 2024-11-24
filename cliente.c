@@ -5,6 +5,7 @@
 //Bibliotecas de rede
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 
 #define BUFSZ 1024
 
@@ -23,13 +24,19 @@ void main(int argc, char **argv){
     if(argc < 3){
         usage(argc, argv);
     }
+
+    struct sockaddr_storage storage;
+    if(0 != addrparse(argv[1], argv[2], &storage)){
+        usage(argc, argv);
+    }
     int s;
-    s = socket(AF_INET, SOCK_STREAM, 0);
+    s = socket(storage.ss_family, SOCK_STREAM, 0);
     if(s == -1){
         logexit("socket");
-    }
+    }    
+    struct socaddr *addr = (struct sockaddr *) &storage;
 
-    if(0 != connect(s, addr, sizeof(addr))){
+    if(0 != connect(s, addr, sizeof(storage))){
         logexit("connect");
     }
 
@@ -42,7 +49,7 @@ void main(int argc, char **argv){
     memset(buf, 0, BUFSZ);
     printf("Mensagem: ");
     fgets(buf, BUFSZ-1, stdin);
-    int count = send(s, buf, strlen(buf)+1, 0);
+    size_t count = send(s, buf, strlen(buf)+1, 0);
     if(count != strlen(buf)+1){
         logexit("send");
     }
@@ -60,7 +67,7 @@ void main(int argc, char **argv){
         }
         total += count;
     }
-    
+
     close(s);
 
     printf("received: %u bytes\n", total);

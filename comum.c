@@ -63,3 +63,26 @@ void addrtostr(const struct sockaddr *addr, char *str, size_t strsize){
     snprintf(str, strsize, "IPv%d %s %hu", version, addrstr, port);
     }
 }
+
+int server_sockaddr_init(const char *proto, const char *portstr, struct sockaddr_storage *storage){
+    uint16_t port = (uint16_t) atoi(portstr);
+    if(port == 0){
+        return -1;
+    }
+    port = htons(port);
+    memset(storage, 0, sizeof(*storage));
+    if(strcmp(proto, "v4") == 0){
+        struct sockaddr_in *addr4 = (struct sockaddr_in *) storage;
+        addr4->sin_family = AF_INET;
+        addr4->sin_port = port;
+        addr4->sin_addr.s_addr = INADDR_ANY;
+    }else if(strcmp(proto, "v6") == 0){
+        struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *) storage;
+        addr6->sin6_family = AF_INET6;
+        addr6->sin6_port = port;
+        addr6->sin6_addr = in6addr_any;
+    }else{
+        return -1;
+    }
+    return 0;
+}
