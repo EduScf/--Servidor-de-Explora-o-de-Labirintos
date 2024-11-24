@@ -9,8 +9,8 @@
 #define BUFSZ 1024
 
 void usage(int argc, char **argv){
-    print("usage: %s <server_ip> <server_port>\n");
-    print("example: %s 127.0.01.1 51511\n");
+    printf("usage: %s <server_ip> <server_port>\n");
+    printf("example: %s 127.0.01.1 51511\n");
     exit(EXIT_FAILURE);
 }
 
@@ -36,11 +36,11 @@ void main(int argc, char **argv){
     char addrstr[BUFSZ];
     addrtostr(addr, addrstr, BUFSZ);
 
-    printf("connected to %s\n", addrstr);
+    printf("connected to %s\n");
 
     char buf[BUFSZ];
     memset(buf, 0, BUFSZ);
-    printf("msg: ");
+    printf("Mensagem: ");
     fgets(buf, BUFSZ-1, stdin);
     int count = send(s, buf, strlen(buf)+1, 0);
     if(count != strlen(buf)+1){
@@ -59,8 +59,8 @@ void main(int argc, char **argv){
             logexit("recv");
         }
         total += count;
-        printf("received: %s\n", buf);
     }
+    
     close(s);
 
     printf("received: %u bytes\n", total);
