@@ -1,3 +1,5 @@
+#include "comum.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,21 +8,17 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 
 #define BUFSZ 1024
 
 void usage(int argc, char **argv){
-    printf("usage: %s <server_ip> <server_port>\n");
-    printf("example: %s 127.0.01.1 51511\n");
+    printf("usage: %s <server_ip> <server_port>\n", argv[0]);
+    printf("example: %s 127.0.01.1 51511\n", argv[0]);
     exit(EXIT_FAILURE);
 }
 
-void logexit(const char *msg){
-    perror(msg);
-    exit(EXIT_FAILURE);
-}
-
-void main(int argc, char **argv){
+int main(int argc, char **argv){
     if(argc < 3){
         usage(argc, argv);
     }
@@ -34,7 +32,7 @@ void main(int argc, char **argv){
     if(s == -1){
         logexit("socket");
     }    
-    struct socaddr *addr = (struct sockaddr *) &storage;
+    struct sockaddr *addr = (struct sockaddr *) &storage;
 
     if(0 != connect(s, addr, sizeof(storage))){
         logexit("connect");
@@ -43,7 +41,7 @@ void main(int argc, char **argv){
     char addrstr[BUFSZ];
     addrtostr(addr, addrstr, BUFSZ);
 
-    printf("connected to %s\n");
+    printf("connected to %s\n", addrstr);
 
     char buf[BUFSZ];
     memset(buf, 0, BUFSZ);

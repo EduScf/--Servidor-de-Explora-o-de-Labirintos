@@ -6,6 +6,11 @@
 #include <inttypes.h>
 #include <arpa/inet.h>
 
+void logexit(const char *msg){
+    perror(msg);
+    exit(EXIT_FAILURE);
+}
+
 int addrparse(const char *addrstr, const char *portstr, struct sockaddr_storage *storage){
     if(addrstr == NULL || portstr == NULL){
         return -1;
