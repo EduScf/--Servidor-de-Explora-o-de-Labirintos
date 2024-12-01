@@ -154,8 +154,9 @@ void processar_start(int csock) {
     struct action resposta;
     memset(&resposta, 0, sizeof(resposta));
 
+    // Reiniciar o estado do labirinto
     marcar_como_desconhecido();
-    encontrar_posicao_inicial();  // This should set jogador_x, jogador_y and labirinto_estado[jogador_x][jogador_y] = 5
+    encontrar_posicao_inicial();
     revelar_posicoes();
 
     int quantidade;
@@ -193,18 +194,23 @@ void processar_move(struct action *acao, int csock) {
         (labirinto_completo[nx][ny] == 1 || labirinto_completo[nx][ny] == 3)) { // Caminho livre ou saída
 
         // Atualizar a posição anterior no estado do labirinto
-        // CHANGED: Restore the original cell value instead of current state
         labirinto_estado[jogador_x][jogador_y] = labirinto_completo[jogador_x][jogador_y];
 
         // Atualizar nova posição do jogador
         jogador_x = nx;
         jogador_y = ny;
         
-        // ADDED: Always mark the new player position with 5
-        labirinto_estado[jogador_x][jogador_y] = 5; // Marca o jogador
+        // Sempre marcar a nova posição do jogador
+        labirinto_estado[jogador_x][jogador_y] = 5; 
 
         // Revelar novas posições ao redor do jogador
         revelar_posicoes();
+
+        // Verificar se chegou na saída
+        if (labirinto_completo[jogador_x][jogador_y] == 3) {
+            printf("Jogador chegou na saída!\n");
+            // Você pode adicionar lógica adicional aqui para lidar com a conclusão do jogo
+        }
 
         // Obter movimentos válidos
         int quantidade;
@@ -224,6 +230,32 @@ void processar_move(struct action *acao, int csock) {
         logexit("send");
     }
 }
+
+void processar_map(int csock) {
+    struct action resposta;
+    memset(&resposta, 0, sizeof(resposta));
+
+    // Copiar o estado atual do labirinto (não o mapa completo)
+    for (int i = 0; i < labirinto_tamanho; ++i) {
+        for (int j = 0; j < labirinto_tamanho; ++j) {
+            resposta.board[i][j] = labirinto_estado[i][j];
+        }
+    }
+
+    resposta.type = 4; // Envia o estado atual como tipo de atualização
+
+    // Obter movimentos válidos
+    int quantidade;
+    obter_movimentos_validos(resposta.moves, &quantidade);
+
+    // Enviar o estado atual do labirinto para o cliente
+    size_t count = send(csock, &resposta, sizeof(resposta), 0);
+    if (count != sizeof(resposta)) {
+        logexit("send");
+    }
+}
+
+
 
 #define BUFSZ 1024
 void usage(int argc, char **argv){
@@ -302,6 +334,8 @@ int main(int argc, char **argv) {
                 processar_start(csock);
             } else if (acao.type == 1) { // move
                 processar_move(&acao, csock);
+            } else if (acao.type == 2) { // map
+                processar_map(csock);
             } else if (acao.type == 7) { // exit
                 printf("[log] cliente %s encerrou a conexão.\n", caddrstr);
                 break;
@@ -315,6 +349,7 @@ int main(int argc, char **argv) {
                     logexit("send");
                 }
             }
+
         }
         close(csock);
     }

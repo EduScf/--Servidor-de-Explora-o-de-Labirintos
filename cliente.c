@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
     while (1) {
         // Solicitar comando ao usuário
         memset(&acao, 0, sizeof(acao));
-        printf("Digite um comando ('start', 'up', 'down', 'left', 'right', 'quit'): ");
+        printf("Digite um comando ('start', 'map', 'up', 'down', 'left', 'right', 'quit'): ");
         char comando[16];
         scanf("%s", comando);
 
@@ -123,6 +123,8 @@ int main(int argc, char **argv) {
             send(s, &acao, sizeof(acao), 0);
             printf("Encerrando conexão...\n");
             break;
+        } else if (strcmp(comando, "map") == 0) {
+            acao.type = 2; // map
         } else {
             printf("Comando inválido.\n");
             continue;
@@ -147,8 +149,11 @@ int main(int argc, char **argv) {
         // Processar resposta do servidor
         if (resposta.type == -1) {
             printf("Movimento inválido.\n");
-        } else if (resposta.type == 4) { // update
+        } else if (acao.type == 2) { // Se o cliente enviou 'map'
+            printf("Mapa completo recebido:\n");
             imprimir_labirinto(resposta.board);
+        } else if (resposta.type == 4) { // Update padrão
+            //imprimir_labirinto(resposta.board);
             imprimir_movimentos(resposta.moves);
         } else {
             printf("Resposta inesperada do servidor.\n");
