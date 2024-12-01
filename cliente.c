@@ -24,8 +24,29 @@ void usage(int argc, char **argv) {
 
 void imprimir_labirinto(int board[10][10]) {
     printf("Estado do labirinto:\n");
-    for (int i = 0; i < 10; ++i) {
-        for (int j = 0; j < 10; ++j) {
+    // Find the actual size of the maze
+    int tamanho = 0;
+    for (int i = 0; i < 10; i++) {
+        int linha_vazia = 1;
+        for (int j = 0; j < 10; j++) {
+            if (board[i][j] != 0 && board[i][j] != -1) {
+                linha_vazia = 0;
+                break;
+            }
+        }
+        if (linha_vazia) {
+            tamanho = i;
+            break;
+        }
+    }
+    
+    // If no empty line found, use full size
+    if (tamanho == 0) {
+        tamanho = 10;
+    }
+
+    for (int i = 0; i < tamanho; ++i) {
+        for (int j = 0; j < tamanho; ++j) {
             switch (board[i][j]) {
                 case 0: printf("# "); break; // Muro
                 case 1: printf("_ "); break; // Caminho livre

@@ -32,20 +32,21 @@ void carregar_labirinto(const char *arquivo) {
         exit(EXIT_FAILURE);
     }
 
-    memset(labirinto_completo, 0, sizeof(labirinto_completo)); // Inicializa com zeros
+    // Inicializa toda a matriz com zeros
+    memset(labirinto_completo, 0, sizeof(labirinto_completo));
 
-    int i = 0, j = 0; // Contadores de linha e coluna
+    int i = 0; // Contador de linha
     char linha[128];  // Buffer para armazenar uma linha do arquivo
 
     while (fgets(linha, sizeof(linha), fp) && i < MAX_SIZE) {
-        char *token = strtok(linha, " "); // Divide a linha em tokens usando espaço como delimitador
-        j = 0; // Reseta o contador de colunas para cada nova linha
+        char *token = strtok(linha, " "); 
+        int j = 0; // Contador de coluna
         while (token && j < MAX_SIZE) {
-            labirinto_completo[i][j] = atoi(token); // Converte o token para inteiro
-            token = strtok(NULL, " ");            // Pega o próximo token
+            labirinto_completo[i][j] = atoi(token);
+            token = strtok(NULL, " ");
             j++;
         }
-        i++; // Próxima linha
+        i++;
     }
 
     labirinto_tamanho = i; // Define o número de linhas lidas
@@ -102,17 +103,18 @@ void revelar_posicoes() {
 }
 
 
-void imprimir_labirinto_cliente(int labirinto[MAX_SIZE][MAX_SIZE], int tamanho) {
-    for (int i = 0; i < tamanho; ++i) {
-        for (int j = 0; j < tamanho; ++j) {
-            switch (labirinto[i][j]) {
-                case 0: printf("#\t"); break; // Muro
-                case 1: printf("_\t"); break; // Caminho livre
-                case 2: printf(">\t"); break; // Entrada
-                case 3: printf("X\t"); break; // Saída
-                case 4: printf("?\t"); break; // Não descoberto
-                case 5: printf("+\t"); break; // Jogador
-                default: printf(" \t"); break; // Espaço vazio
+void imprimir_labirinto(int board[10][10]) {
+    printf("Estado do labirinto:\n");
+    for (int i = 0; i < labirinto_tamanho; ++i) {
+        for (int j = 0; j < labirinto_tamanho; ++j) {
+            switch (board[i][j]) {
+                case 0: printf("# "); break; // Muro
+                case 1: printf("_ "); break; // Caminho livre
+                case 2: printf("> "); break; // Entrada
+                case 3: printf("X "); break; // Saída
+                case 4: printf("? "); break; // Não descoberto
+                case 5: printf("+ "); break; // Jogador
+                default: printf("  "); break; // Espaço vazio
             }
         }
         printf("\n");
@@ -319,4 +321,3 @@ int main(int argc, char **argv) {
 
     exit(EXIT_SUCCESS);
 }
-
