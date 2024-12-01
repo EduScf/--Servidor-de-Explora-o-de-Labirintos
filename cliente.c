@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-//Bibliotecas de rede
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -12,64 +10,130 @@
 
 #define BUFSZ 1024
 
-void usage(int argc, char **argv){
+struct action {
+    int type;
+    int moves[100];
+    int board[10][10];
+};
+
+void usage(int argc, char **argv) {
     printf("usage: %s <server_ip> <server_port>\n", argv[0]);
-    printf("example: %s 127.0.01.1 51511\n", argv[0]);
+    printf("example: %s 127.0.0.1 51511\n", argv[0]);
     exit(EXIT_FAILURE);
 }
 
-int main(int argc, char **argv){
-    if(argc < 3){
+void imprimir_labirinto(int board[10][10]) {
+    printf("Estado do labirinto:\n");
+    for (int i = 0; i < 10; ++i) {
+        for (int j = 0; j < 10; ++j) {
+            switch (board[i][j]) {
+                case 0: printf("# "); break; // Muro
+                case 1: printf("_ "); break; // Caminho livre
+                case 2: printf("> "); break; // Entrada
+                case 3: printf("X "); break; // Saída
+                case 4: printf("? "); break; // Não descoberto
+                case 5: printf("+ "); break; // Jogador
+                default: printf("  "); break; // Espaço vazio
+            }
+        }
+        printf("\n");
+    }
+}
+
+void imprimir_movimentos(int moves[100]) {
+    printf("Movimentos válidos: ");
+    for (int i = 0; moves[i] != 0; ++i) {
+        switch (moves[i]) {
+            case 1: printf("up "); break;
+            case 2: printf("right "); break;
+            case 3: printf("down "); break;
+            case 4: printf("left "); break;
+        }
+    }
+    printf("\n");
+}
+
+int main(int argc, char **argv) {
+    if (argc < 3) {
         usage(argc, argv);
     }
 
     struct sockaddr_storage storage;
-    if(0 != addrparse(argv[1], argv[2], &storage)){
+    if (addrparse(argv[1], argv[2], &storage) != 0) {
         usage(argc, argv);
     }
-    int s;
-    s = socket(storage.ss_family, SOCK_STREAM, 0);
-    if(s == -1){
+    int s = socket(storage.ss_family, SOCK_STREAM, 0);
+    if (s == -1) {
         logexit("socket");
-    }    
-    struct sockaddr *addr = (struct sockaddr *) &storage;
+    }
+    struct sockaddr *addr = (struct sockaddr *)&storage;
 
-    if(0 != connect(s, addr, sizeof(storage))){
+    if (connect(s, addr, sizeof(storage)) != 0) {
         logexit("connect");
     }
 
-    char addrstr[BUFSZ];
-    addrtostr(addr, addrstr, BUFSZ);
+    printf("Conectado ao servidor %s:%s\n", argv[1], argv[2]);
 
-    printf("connected to %s\n", addrstr);
+    struct action acao, resposta;
+    while (1) {
+        // Solicitar comando ao usuário
+        memset(&acao, 0, sizeof(acao));
+        printf("Digite um comando ('start', 'up', 'down', 'left', 'right', 'quit'): ");
+        char comando[16];
+        scanf("%s", comando);
 
-    char buf[BUFSZ];
-    memset(buf, 0, BUFSZ);
-    printf("Mensagem: ");
-    fgets(buf, BUFSZ-1, stdin);
-    size_t count = send(s, buf, strlen(buf)+1, 0);
-    if(count != strlen(buf)+1){
-        logexit("send");
-    }
-
-    memset(buf, 0, BUFSZ);
-    unsigned total = 0;
-    while(1){
-        count = recv(s, buf, BUFSZ - total, 0);
-        if(count == 0){
-            //Conexão encerrada pelo servidor
+        // Preencher a estrutura `action` com base no comando
+        if (strcmp(comando, "start") == 0) {
+            acao.type = 0; // start
+        } else if (strcmp(comando, "up") == 0) {
+            acao.type = 1; // move
+            acao.moves[0] = 1;
+        } else if (strcmp(comando, "right") == 0) {
+            acao.type = 1; // move
+            acao.moves[0] = 2;
+        } else if (strcmp(comando, "down") == 0) {
+            acao.type = 1; // move
+            acao.moves[0] = 3;
+        } else if (strcmp(comando, "left") == 0) {
+            acao.type = 1; // move
+            acao.moves[0] = 4;
+        } else if (strcmp(comando, "quit") == 0) {
+            acao.type = 7; // exit
+            send(s, &acao, sizeof(acao), 0);
+            printf("Encerrando conexão...\n");
             break;
+        } else {
+            printf("Comando inválido.\n");
+            continue;
         }
-        if(count == -1){
+
+        // Enviar comando para o servidor
+        size_t count = send(s, &acao, sizeof(acao), 0);
+        if (count != sizeof(acao)) {
+            logexit("send");
+        }
+
+        // Receber resposta do servidor
+        memset(&resposta, 0, sizeof(resposta));
+        count = recv(s, &resposta, sizeof(resposta), 0);
+        if (count == 0) {
+            printf("Conexão encerrada pelo servidor.\n");
+            break;
+        } else if (count != sizeof(resposta)) {
             logexit("recv");
         }
-        total += count;
+
+        // Processar resposta do servidor
+        if (resposta.type == -1) {
+            printf("Movimento inválido.\n");
+        } else if (resposta.type == 4) { // update
+            imprimir_labirinto(resposta.board);
+            imprimir_movimentos(resposta.moves);
+        } else {
+            printf("Resposta inesperada do servidor.\n");
+        }
     }
 
     close(s);
-
-    printf("received: %u bytes\n", total);
-    puts(buf);
-
-    exit(EXIT_SUCCESS);
+    return 0;
 }
