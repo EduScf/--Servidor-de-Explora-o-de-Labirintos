@@ -39,7 +39,7 @@ void imprimir_labirinto(int board[10][10]) {
             break;
         }
     }
-    
+
     // If no empty line found, use full size
     if (tamanho == 0) {
         tamanho = 10;
@@ -60,6 +60,56 @@ void imprimir_labirinto(int board[10][10]) {
         printf("\n");
     }
 }
+
+//A função imprimirLabirintoVitoria vai imprimir o labirinto completo, com todas as posições reveladas, considerando que podemos receber tabuleiros 5x5, 6x6,..., 10x10 devemos interpretar o tamanho correto
+void imprimirLabirintoVitoria(int board[10][10]) {
+    printf("Labirinto completo revelado:\n");
+    // Find the actual size of the maze
+    int tamanho = 0;
+    for (int i = 0; i < 10; i++) {
+        int linha_vazia = 1;
+        for (int j = 0; j < 10; j++) {
+            if (board[i][j] != 0 && board[i][j] != -1) {
+                linha_vazia = 0;
+                break;
+            }
+        }
+        if (linha_vazia) {
+            tamanho = i;
+            break;
+        }
+    }
+
+    // If no empty line found, use full size
+    if (tamanho == 0) {
+        tamanho = 10;
+    }
+
+    // Increment tamanho for "gambiarra"
+    if (tamanho < 10) {
+        tamanho++;
+    }
+
+    for (int i = 0; i < tamanho; ++i) {
+        for (int j = 0; j < tamanho; ++j) {
+            if (i < 10 && j < 10) { // Prevent out-of-bound access
+                switch (board[i][j]) {
+                    case 0: printf("# "); break; // Muro
+                    case 1: printf("_ "); break; // Caminho livre
+                    case 2: printf("> "); break; // Entrada
+                    case 3: printf("X "); break; // Saída
+                    case 4: printf("? "); break; // Não descoberto
+                    case 5: printf("+ "); break; // Jogador
+                    default: printf("  "); break; // Espaço vazio
+                }
+            } else {
+                printf("  "); // Preenche posições inexistentes
+            }
+        }
+        printf("\n");
+    }
+}
+
 
 void imprimir_movimentos(int moves[100]) {
     printf("Movimentos válidos: ");
@@ -155,6 +205,11 @@ int main(int argc, char **argv) {
         } else if (resposta.type == 4) { // Update padrão
             //imprimir_labirinto(resposta.board);
             imprimir_movimentos(resposta.moves);
+        } else if(resposta.type == 5) {
+            printf("Parabéns! Você chegou na saída do labirinto!\n");
+            //Imprimir o labirinto completo revelado
+            imprimirLabirintoVitoria(resposta.board);
+            break; // Opcional: encerrar o jogo após a vitória
         } else {
             printf("Resposta inesperada do servidor.\n");
         }

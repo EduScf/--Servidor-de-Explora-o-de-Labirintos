@@ -208,17 +208,25 @@ void processar_move(struct action *acao, int csock) {
 
         // Verificar se chegou na saída
         if (labirinto_completo[jogador_x][jogador_y] == 3) {
-            printf("Jogador chegou na saída!\n");
-            // Você pode adicionar lógica adicional aqui para lidar com a conclusão do jogo
+        printf("Jogador chegou na saída!\n");
+        
+        // Copiar o labirinto completo para o estado do labirinto
+        for (int i = 0; i < labirinto_tamanho; ++i) {
+            for (int j = 0; j < labirinto_tamanho; ++j) {
+                resposta.board[i][j] = labirinto_completo[i][j];
+            }
         }
+        
+        resposta.type = 5; // Tipo de ação de vitória
+        } else {
+            // Obter movimentos válidos
+            int quantidade;
+            obter_movimentos_validos(resposta.moves, &quantidade);
 
-        // Obter movimentos válidos
-        int quantidade;
-        obter_movimentos_validos(resposta.moves, &quantidade);
-
-        // Preencher resposta
-        resposta.type = 4; // update
-        memcpy(resposta.board, labirinto_estado, sizeof(labirinto_estado));
+            // Preencher resposta
+            resposta.type = 4; // update
+            memcpy(resposta.board, labirinto_estado, sizeof(labirinto_estado));
+        }
     } else {
         // Movimento inválido
         resposta.type = -1; // Indica erro
@@ -230,7 +238,6 @@ void processar_move(struct action *acao, int csock) {
         logexit("send");
     }
 }
-
 void processar_map(int csock) {
     struct action resposta;
     memset(&resposta, 0, sizeof(resposta));
