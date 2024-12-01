@@ -85,17 +85,22 @@ void revelar_posicoes() {
             // Verificar limites do labirinto
             if (nx >= 0 && nx < labirinto_tamanho && ny >= 0 && ny < labirinto_tamanho) {
                 // Revelar a posição se for desconhecida
-                // IMPORTANTE: Preserve a posição do jogador
-                if (nx != jogador_x || ny != jogador_y) {
+                // Preserve a entrada (>)
+                if (labirinto_completo[nx][ny] == 2) {
+                    labirinto_estado[nx][ny] = 2; // Preserva o símbolo de entrada
+                } else {
                     labirinto_estado[nx][ny] = labirinto_completo[nx][ny];
                 }
             }
         }
     }
-    
-    // Garantir que a posição do jogador sempre seja marcada como 5
-    labirinto_estado[jogador_x][jogador_y] = 5;
+
+    // Marca a posição atual do jogador como '+', exceto na entrada
+    if (labirinto_completo[jogador_x][jogador_y] != 2) {
+        labirinto_estado[jogador_x][jogador_y] = 5;
+    }
 }
+
 
 void imprimir_labirinto_cliente(int labirinto[MAX_SIZE][MAX_SIZE], int tamanho) {
     for (int i = 0; i < tamanho; ++i) {
