@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
     while (1) {
         // Solicitar comando ao usuário
         memset(&acao, 0, sizeof(acao));
-        printf("Digite um comando ('start', 'map', 'up', 'down', 'left', 'right', 'quit'): ");
+        printf("Digite um comando ('start', 'map', 'up', 'down', 'left', 'right', 'reset', 'quit'): ");
         char comando[16];
         scanf("%s", comando);
 
@@ -168,6 +168,8 @@ int main(int argc, char **argv) {
         } else if (strcmp(comando, "left") == 0) {
             acao.type = 1; // move
             acao.moves[0] = 4;
+        } else if (strcmp(comando, "reset") == 0) {
+            acao.type = 6; // reset
         } else if (strcmp(comando, "quit") == 0) {
             acao.type = 7; // exit
             send(s, &acao, sizeof(acao), 0);
@@ -203,13 +205,14 @@ int main(int argc, char **argv) {
             printf("Mapa completo recebido:\n");
             imprimir_labirinto(resposta.board);
         } else if (resposta.type == 4) { // Update padrão
-            //imprimir_labirinto(resposta.board);
             imprimir_movimentos(resposta.moves);
         } else if(resposta.type == 5) {
             printf("Parabéns! Você chegou na saída do labirinto!\n");
             //Imprimir o labirinto completo revelado
             imprimirLabirintoVitoria(resposta.board);
             break; // Opcional: encerrar o jogo após a vitória
+        } else if(resposta.type == 6) {
+            printf("Labirinto reiniciado!\n");
         } else {
             printf("Resposta inesperada do servidor.\n");
         }

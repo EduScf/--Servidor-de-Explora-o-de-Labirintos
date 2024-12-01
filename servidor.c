@@ -262,7 +262,30 @@ void processar_map(int csock) {
     }
 }
 
+void processar_reset(int csock) {
+    struct action resposta;
+    memset(&resposta, 0, sizeof(resposta));
 
+    // Reiniciar o estado do labirinto
+    marcar_como_desconhecido();
+    encontrar_posicao_inicial(); // Define jogador_x e jogador_y
+    revelar_posicoes();          // Atualiza as posições visíveis
+
+    // Obter movimentos válidos
+    int quantidade;
+    obter_movimentos_validos(resposta.moves, &quantidade);
+
+    resposta.type = 6; // Tipo de resposta para reset é um novo type = 6
+    memcpy(resposta.board, labirinto_estado, sizeof(labirinto_estado));
+
+    // Enviar o estado inicial ao cliente
+    size_t count = send(csock, &resposta, sizeof(resposta), 0);
+    if (count != sizeof(resposta)) {
+        logexit("send");
+    }
+
+    printf("Jogo reiniciado pelo cliente.\n");
+}
 
 #define BUFSZ 1024
 void usage(int argc, char **argv){
@@ -343,6 +366,8 @@ int main(int argc, char **argv) {
                 processar_move(&acao, csock);
             } else if (acao.type == 2) { // map
                 processar_map(csock);
+            } else if (acao.type == 6){ // reset
+                processar_reset(csock);
             } else if (acao.type == 7) { // exit
                 printf("[log] cliente %s encerrou a conexão.\n", caddrstr);
                 break;
