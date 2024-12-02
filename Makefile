@@ -1,19 +1,19 @@
 CC = gcc
 CFLAGS = -Wall
 
-all: cliente servidor servidor-mt
+all: client server servidor-mt
 
-comum.o: comum.c
-	$(CC) $(CFLAGS) -c comum.c -o comum.o
+common.o: common.c
+	$(CC) $(CFLAGS) -c common.c -o common.o
 
-cliente: cliente.c comum.o
-	$(CC) $(CFLAGS) cliente.c comum.o -o cliente
+client: client.c common.o
+	$(CC) $(CFLAGS) client.c common.o -o client
 
-servidor: servidor.c comum.o
-	$(CC) $(CFLAGS) servidor.c comum.o -o servidor
+server: server.c common.o
+	$(CC) $(CFLAGS) server.c common.o -o server
 
-servidor-mt: servidor-mt.c comum.o
-	$(CC) $(CFLAGS) servidor-mt.c comum.o -o servidor-mt -lpthread
+servidor-mt: servidor-mt.c common.o
+	$(CC) $(CFLAGS) servidor-mt.c common.o -o servidor-mt -lpthread
 
 clean:
-	rm -f *.o cliente servidor servidor-mt
+	rm -f *.o client server servidor-mt

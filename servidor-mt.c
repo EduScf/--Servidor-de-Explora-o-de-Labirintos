@@ -1,4 +1,4 @@
-#include "comum.h"
+#include "common.h"
 
 //Coloque as bibliotecas padrões de C
 #include <stdio.h>
