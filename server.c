@@ -252,20 +252,19 @@ void processar_map(int csock) {
     struct action resposta;
     memset(&resposta, 0, sizeof(resposta));
 
-    // Copiar o estado atual do labirinto (não o mapa completo)
+    // Copiar o estado atual do labirinto para a resposta
     for (int i = 0; i < labirinto_tamanho; ++i) {
         for (int j = 0; j < labirinto_tamanho; ++j) {
             resposta.board[i][j] = labirinto_estado[i][j];
         }
     }
 
-    resposta.type = 4; // Envia o estado atual como tipo de atualização
+    // Garantir que o jogador está marcado corretamente
+    resposta.board[jogador_x][jogador_y] = 5; // Marca posição do jogador como '+'
 
-    // Obter movimentos válidos
-    int quantidade;
-    obter_movimentos_validos(resposta.moves, &quantidade);
+    resposta.type = 4; // Envia o estado atualizado do labirinto
 
-    // Enviar o estado atual do labirinto para o cliente
+    // Enviar o estado do labirinto para o cliente
     size_t count = send(csock, &resposta, sizeof(resposta), 0);
     if (count != sizeof(resposta)) {
         logexit("send");
