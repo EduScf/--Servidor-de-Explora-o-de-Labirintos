@@ -124,6 +124,22 @@ void imprimir_movimentos(int moves[100]) {
     printf("\n");
 }
 
+void imprimir_hint(int moves[100]) {
+    printf("Hint: ");
+    for (int i = 0; moves[i] != 0 && i < 100; ++i) {
+        switch (moves[i]) {
+            case 1: printf("up"); break;
+            case 2: printf("right"); break;
+            case 3: printf("down"); break;
+            case 4: printf("left"); break;
+        }
+        if (moves[i + 1] != 0) { // Adicionar vírgula apenas se não for o último movimento
+            printf(", ");
+        }
+    }
+    printf("\n");
+}
+
 int main(int argc, char **argv) {
     if (argc < 3) {
         usage(argc, argv);
@@ -149,7 +165,7 @@ int main(int argc, char **argv) {
     while (1) {
         // Solicitar comando ao usuário
         memset(&acao, 0, sizeof(acao));
-        printf("Digite um comando ('start', 'map', 'up', 'down', 'left', 'right', 'reset', 'exit'): ");
+        printf("Digite um comando ('start', 'map', 'up', 'down', 'left', 'right', 'hint', 'reset', 'exit'): ");
         char comando[16];
         scanf("%s", comando);
 
@@ -168,6 +184,8 @@ int main(int argc, char **argv) {
         } else if (strcmp(comando, "left") == 0) {
             acao.type = 1; // move
             acao.moves[0] = 4;
+        } else if (strcmp(comando, "hint") == 0) {
+            acao.type = 3; // hint
         } else if (strcmp(comando, "reset") == 0) {
             acao.type = 6; // reset
         } else if (strcmp(comando, "exit") == 0) {
@@ -208,6 +226,8 @@ int main(int argc, char **argv) {
         } else if (acao.type == 2) { // Se o cliente enviou 'map'
             printf("Mapa completo recebido:\n");
             imprimir_labirinto(resposta.board);
+        } else if (acao.type == 3 && resposta.type == 4){
+            imprimir_hint(resposta.moves);
         } else if (resposta.type == 4) { // Update padrão
             imprimir_movimentos(resposta.moves);
         } else if(resposta.type == 5) {

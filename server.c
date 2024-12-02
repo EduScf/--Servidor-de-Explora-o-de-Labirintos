@@ -296,6 +296,60 @@ void processar_reset(int csock) {
     printf("Jogo reiniciado pelo cliente.\n");
 }
 
+void processar_hint(int csock, bool jogo_iniciado) {
+    struct action resposta;
+    memset(&resposta, 0, sizeof(resposta));
+
+    // Verificar se o jogo foi iniciado
+    if (!jogo_iniciado) {
+        resposta.type = -2; // Jogo não iniciado
+        send(csock, &resposta, sizeof(resposta), 0);
+        return;
+    }
+
+    int movimentos[100] = {0}; // Inicializa o vetor de movimentos com zeros
+    int movimento_atual = 0;
+    int visitados[MAX_SIZE][MAX_SIZE] = {0}; // Matriz para evitar revisitar posições
+    int x = jogador_x, y = jogador_y;
+
+    visitados[x][y] = 1; // Marca a posição inicial como visitada
+
+    while (labirinto_completo[x][y] != 3) { // Enquanto não atingir a saída
+        if (movimento_atual >= 99) { // Evitar ultrapassar o limite de 100 movimentos
+            break;
+        }
+
+        // Verificar direções na ordem da regra da mão direita: direita, baixo, esquerda, cima
+        if (y + 1 < labirinto_tamanho && labirinto_completo[x][y + 1] != 0 && !visitados[x][y + 1]) {
+            movimentos[movimento_atual++] = 2; // right
+            y += 1;
+        } else if (x + 1 < labirinto_tamanho && labirinto_completo[x + 1][y] != 0 && !visitados[x + 1][y]) {
+            movimentos[movimento_atual++] = 3; // down
+            x += 1;
+        } else if (y - 1 >= 0 && labirinto_completo[x][y - 1] != 0 && !visitados[x][y - 1]) {
+            movimentos[movimento_atual++] = 4; // left
+            y -= 1;
+        } else if (x - 1 >= 0 && labirinto_completo[x - 1][y] != 0 && !visitados[x - 1][y]) {
+            movimentos[movimento_atual++] = 1; // up
+            x -= 1;
+        } else {
+            break; // Sem opções válidas (evita loops em labirintos desconexos)
+        }
+
+        visitados[x][y] = 1; // Marca a nova posição como visitada
+    }
+
+    // Preenche os movimentos na resposta
+    memcpy(resposta.moves, movimentos, sizeof(movimentos));
+    resposta.type = 4; // Tipo de atualização para dica
+
+    // Enviar resposta ao cliente
+    size_t count = send(csock, &resposta, sizeof(resposta), 0);
+    if (count != sizeof(resposta)) {
+        logexit("send");
+    }
+}
+
 #define BUFSZ 1024
 void usage(int argc, char **argv){
     printf("usage: %s <v4|v6> <server ports>\n", argv[0]);
@@ -370,7 +424,7 @@ int main(int argc, char **argv) {
             printf("[log] received action type: %d\n", acao.type);
 
             // Verificar estado do jogo antes de aceitar comandos específicos
-           if (!jogo_iniciado && (acao.type == 1 || acao.type == 2 || acao.type == 6)) {
+           if (!jogo_iniciado && (acao.type == 1 || acao.type == 2 || acao.type == 3 || acao.type == 6)) {
                 struct action resposta;
                 memset(&resposta, 0, sizeof(resposta));
                 resposta.type = -2; // Erro: jogo não iniciado
@@ -392,6 +446,8 @@ int main(int argc, char **argv) {
                 processar_move(&acao, csock, jogo_iniciado);
             } else if (acao.type == 2) { // map
                 processar_map(csock);
+            } else if (acao.type == 3) { // hint
+                processar_hint(csock, jogo_iniciado);
             } else if (acao.type == 6) { // reset
                 processar_reset(csock);
             } else if (acao.type == 7) { // exit
