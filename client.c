@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
     while (1) {
         // Solicitar comando ao usuário
         memset(&acao, 0, sizeof(acao));
-        printf("Digite um comando ('start', 'map', 'up', 'down', 'left', 'right', 'reset', 'quit'): ");
+        printf("Digite um comando ('start', 'map', 'up', 'down', 'left', 'right', 'reset', 'exit'): ");
         char comando[16];
         scanf("%s", comando);
 
@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
             acao.moves[0] = 4;
         } else if (strcmp(comando, "reset") == 0) {
             acao.type = 6; // reset
-        } else if (strcmp(comando, "quit") == 0) {
+        } else if (strcmp(comando, "exit") == 0) {
             acao.type = 7; // exit
             send(s, &acao, sizeof(acao), 0);
             printf("Encerrando conexão...\n");
