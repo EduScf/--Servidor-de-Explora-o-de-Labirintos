@@ -178,7 +178,7 @@ int main(int argc, char **argv) {
         } else if (strcmp(comando, "map") == 0) {
             acao.type = 2; // map
         } else {
-            printf("Comando inválido.\n");
+            printf("error: command not found.\n");
             continue;
         }
 
@@ -200,7 +200,11 @@ int main(int argc, char **argv) {
 
         // Processar resposta do servidor
         if (resposta.type == -1) {
-            printf("Movimento inválido.\n");
+            printf("error: command not found\n");
+        } else if (resposta.type == -2) {
+            printf("error: start the game first\n");
+        } else if (resposta.type == -3) {
+            printf("error: you cannot go this way\n");
         } else if (acao.type == 2) { // Se o cliente enviou 'map'
             printf("Mapa completo recebido:\n");
             imprimir_labirinto(resposta.board);

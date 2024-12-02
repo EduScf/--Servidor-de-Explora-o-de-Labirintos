@@ -168,9 +168,15 @@ void processar_start(int csock) {
     send(csock, &resposta, sizeof(resposta), 0);
 }
 
-void processar_move(struct action *acao, int csock) {
+void processar_move(struct action *acao, int csock, bool jogo_iniciado) {
     struct action resposta;
     memset(&resposta, 0, sizeof(resposta));
+
+    if (!jogo_iniciado) {
+        resposta.type = -2; // Jogo não iniciado
+        send(csock, &resposta, sizeof(resposta), 0);
+        return;
+    }
 
     int dx = 0, dy = 0;
 
@@ -182,7 +188,10 @@ void processar_move(struct action *acao, int csock) {
         case 4: dy = -1; break; // left
         default:
             resposta.type = -1; // Movimento inválido
-            send(csock, &resposta, sizeof(resposta), 0);
+            size_t count = send(csock, &resposta, sizeof(resposta), 0);
+            if (count != sizeof(resposta)) {
+                logexit("send");
+            }
             return;
     }
 
@@ -208,16 +217,15 @@ void processar_move(struct action *acao, int csock) {
 
         // Verificar se chegou na saída
         if (labirinto_completo[jogador_x][jogador_y] == 3) {
-        printf("Jogador chegou na saída!\n");
-        
-        // Copiar o labirinto completo para o estado do labirinto
-        for (int i = 0; i < labirinto_tamanho; ++i) {
-            for (int j = 0; j < labirinto_tamanho; ++j) {
-                resposta.board[i][j] = labirinto_completo[i][j];
+            printf("Jogador chegou na saída!\n");
+            
+            // Copiar o labirinto completo para o estado do labirinto
+            for (int i = 0; i < labirinto_tamanho; ++i) {
+                for (int j = 0; j < labirinto_tamanho; ++j) {
+                    resposta.board[i][j] = labirinto_completo[i][j];
+                }
             }
-        }
-        
-        resposta.type = 5; // Tipo de ação de vitória
+            resposta.type = 5; // Tipo de ação de vitória
         } else {
             // Obter movimentos válidos
             int quantidade;
@@ -228,8 +236,9 @@ void processar_move(struct action *acao, int csock) {
             memcpy(resposta.board, labirinto_estado, sizeof(labirinto_estado));
         }
     } else {
-        // Movimento inválido
-        resposta.type = -1; // Indica erro
+        resposta.type = -3; // Movimento não permitido
+        send(csock, &resposta, sizeof(resposta), 0);
+        return;
     }
 
     // Enviar resposta ao cliente
@@ -238,6 +247,7 @@ void processar_move(struct action *acao, int csock) {
         logexit("send");
     }
 }
+
 void processar_map(int csock) {
     struct action resposta;
     memset(&resposta, 0, sizeof(resposta));
@@ -302,6 +312,7 @@ int main(int argc, char **argv) {
     // Carregar o labirinto na inicialização
     carregar_labirinto(argv[4]);       // Carregar o labirinto do arquivo
     marcar_como_desconhecido();       // Inicializar estado com '?'
+    bool jogo_iniciado = false;       // Estado do jogo não iniciado ainda
     
     // Configuração do socket do servidor
     struct sockaddr_storage storage;
@@ -359,14 +370,30 @@ int main(int argc, char **argv) {
 
             printf("[log] received action type: %d\n", acao.type);
 
+            // Verificar estado do jogo antes de aceitar comandos específicos
+           if (!jogo_iniciado && (acao.type == 1 || acao.type == 2 || acao.type == 6)) {
+                struct action resposta;
+                memset(&resposta, 0, sizeof(resposta));
+                resposta.type = -2; // Erro: jogo não iniciado
+                send(csock, &resposta, sizeof(resposta), 0);
+                continue;
+            }
+
             // Processar comando baseado no tipo
             if (acao.type == 0) { // start
+                jogo_iniciado = true;
                 processar_start(csock);
+            } else if (!jogo_iniciado) {
+                // Ignorar comandos inválidos antes do start
+                struct action resposta;
+                memset(&resposta, 0, sizeof(resposta));
+                resposta.type = -1; // Erro
+                send(csock, &resposta, sizeof(resposta), 0);
             } else if (acao.type == 1) { // move
-                processar_move(&acao, csock);
+                processar_move(&acao, csock, jogo_iniciado);
             } else if (acao.type == 2) { // map
                 processar_map(csock);
-            } else if (acao.type == 6){ // reset
+            } else if (acao.type == 6) { // reset
                 processar_reset(csock);
             } else if (acao.type == 7) { // exit
                 printf("[log] cliente %s encerrou a conexão.\n", caddrstr);
@@ -376,12 +403,8 @@ int main(int argc, char **argv) {
                 struct action resposta;
                 memset(&resposta, 0, sizeof(resposta));
                 resposta.type = -1; // Comando inválido
-                count = send(csock, &resposta, sizeof(resposta), 0);
-                if (count != sizeof(resposta)) {
-                    logexit("send");
-                }
+                send(csock, &resposta, sizeof(resposta), 0);
             }
-
         }
         close(csock);
     }
