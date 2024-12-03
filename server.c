@@ -104,7 +104,7 @@ void revelar_posicoes() {
 
 
 void imprimir_labirinto(int board[10][10]) {
-    printf("Estado do labirinto:\n");
+    //printf("Estado do labirinto:\n");
     for (int i = 0; i < labirinto_tamanho; ++i) {
         for (int j = 0; j < labirinto_tamanho; ++j) {
             switch (board[i][j]) {
@@ -123,8 +123,11 @@ void imprimir_labirinto(int board[10][10]) {
 
 // Função para verificar se uma célula é válida para movimento
 bool posicao_valida(int x, int y) {
-    return x >= 0 && x < labirinto_tamanho && y >= 0 && y < labirinto_tamanho &&
-           labirinto_completo[x][y] == 1; // Caminho livre
+    return x >= 0 && x < labirinto_tamanho && 
+           y >= 0 && y < labirinto_tamanho &&
+           (labirinto_completo[x][y] == 1 || // Caminho livre
+            labirinto_completo[x][y] == 3 || // Saída
+            labirinto_completo[x][y] == 2);  // Entrada
 }
 
 // Função para determinar os movimentos válidos
@@ -200,7 +203,7 @@ void processar_move(struct action *acao, int csock, bool jogo_iniciado) {
 
     // Verificar validade do movimento
     if (nx >= 0 && nx < labirinto_tamanho && ny >= 0 && ny < labirinto_tamanho &&
-        (labirinto_completo[nx][ny] == 1 || labirinto_completo[nx][ny] == 3)) { // Caminho livre ou saída
+        (labirinto_completo[nx][ny] == 1 || labirinto_completo[nx][ny] == 2 || labirinto_completo[nx][ny] == 3)) { // Caminho livre, entrada ou saída
 
         // Atualizar a posição anterior no estado do labirinto
         labirinto_estado[jogador_x][jogador_y] = labirinto_completo[jogador_x][jogador_y];
@@ -217,7 +220,7 @@ void processar_move(struct action *acao, int csock, bool jogo_iniciado) {
 
         // Verificar se chegou na saída
         if (labirinto_completo[jogador_x][jogador_y] == 3) {
-            printf("Jogador chegou na saída!\n");
+            //printf("Jogador chegou na saída!\n");
             
             // Copiar o labirinto completo para o estado do labirinto
             for (int i = 0; i < labirinto_tamanho; ++i) {
@@ -293,7 +296,7 @@ void processar_reset(int csock) {
         logexit("send");
     }
 
-    printf("Jogo reiniciado pelo cliente.\n");
+    printf("starting new game\n");
 }
 
 void processar_hint(int csock, bool jogo_iniciado) {
@@ -394,7 +397,7 @@ int main(int argc, char **argv) {
 
     char addrstr[BUFSZ];
     addrtostr(addr, addrstr, BUFSZ);
-    printf("bound to %s, waiting for connections\n", addrstr);
+    //printf("bound to %s, waiting for connections\n", addrstr); //Retirado pois o professor não quer nesse formato
 
     while (1) {
         struct sockaddr_storage cstorage;
@@ -407,7 +410,8 @@ int main(int argc, char **argv) {
         }
         char caddrstr[BUFSZ];
         addrtostr(caddr, caddrstr, BUFSZ);
-        printf("[log] connection from %s\n", caddrstr);
+        //printf("[log] connection from %s\n", caddrstr); //Retirado pois o professor não quer nesse formato
+        printf("client connected\n");
 
         while (1) {
             struct action acao;
@@ -415,13 +419,14 @@ int main(int argc, char **argv) {
             size_t count = recv(csock, &acao, sizeof(acao), 0);
             if (count == 0) {
                 // Conexão encerrada pelo cliente
-                printf("[log] conexão encerrada por %s\n", caddrstr);
+                //printf("[log] conexão encerrada por %s\n", caddrstr);
+                printf("client disconnected\n");
                 break;
             } else if (count == -1) {
                 logexit("recv");
             }
 
-            printf("[log] received action type: %d\n", acao.type);
+            //printf("[log] received action type: %d\n", acao.type); // Retirado pois o professor não quer nesse formato
 
             // Verificar estado do jogo antes de aceitar comandos específicos
            if (!jogo_iniciado && (acao.type == 1 || acao.type == 2 || acao.type == 3 || acao.type == 6)) {
@@ -436,6 +441,7 @@ int main(int argc, char **argv) {
             if (acao.type == 0) { // start
                 jogo_iniciado = true;
                 processar_start(csock);
+                printf("starting new game\n");
             } else if (!jogo_iniciado) {
                 // Ignorar comandos inválidos antes do start
                 struct action resposta;
@@ -451,7 +457,8 @@ int main(int argc, char **argv) {
             } else if (acao.type == 6) { // reset
                 processar_reset(csock);
             } else if (acao.type == 7) { // exit
-                printf("[log] cliente %s encerrou a conexão.\n", caddrstr);
+                //printf("[log] cliente %s encerrou a conexão.\n", caddrstr);
+                printf("client disconnected\n");
                 break;
             } else {
                 // Comando desconhecido

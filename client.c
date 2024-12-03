@@ -23,7 +23,7 @@ void usage(int argc, char **argv) {
 }
 
 void imprimir_labirinto(int board[10][10]) {
-    printf("Estado do labirinto:\n");
+    //printf("Estado do labirinto:\n");
     // Find the actual size of the maze
     int tamanho = 0;
     for (int i = 0; i < 10; i++) {
@@ -63,7 +63,7 @@ void imprimir_labirinto(int board[10][10]) {
 
 //A função imprimirLabirintoVitoria vai imprimir o labirinto completo, com todas as posições reveladas, considerando que podemos receber tabuleiros 5x5, 6x6,..., 10x10 devemos interpretar o tamanho correto
 void imprimirLabirintoVitoria(int board[10][10]) {
-    printf("Labirinto completo revelado:\n");
+    //printf("Labirinto completo revelado:\n");
     // Find the actual size of the maze
     int tamanho = 0;
     for (int i = 0; i < 10; i++) {
@@ -112,13 +112,19 @@ void imprimirLabirintoVitoria(int board[10][10]) {
 
 
 void imprimir_movimentos(int moves[100]) {
-    printf("Movimentos válidos: ");
+    printf("Possible moves: ");
     for (int i = 0; moves[i] != 0; ++i) {
         switch (moves[i]) {
-            case 1: printf("up "); break;
-            case 2: printf("right "); break;
-            case 3: printf("down "); break;
-            case 4: printf("left "); break;
+            case 1: printf("up"); break;
+            case 2: printf("right"); break;
+            case 3: printf("down"); break;
+            case 4: printf("left"); break;
+        }
+        // Adiciona uma vírgula e espaço se não for o último movimento
+        if (moves[i + 1] != 0) {
+            printf(", ");
+        } else {
+            printf("."); // Adiciona um ponto final no último movimento
         }
     }
     printf("\n");
@@ -135,6 +141,8 @@ void imprimir_hint(int moves[100]) {
         }
         if (moves[i + 1] != 0) { // Adicionar vírgula apenas se não for o último movimento
             printf(", ");
+        } else {
+            printf("."); // Adicionar ponto final no último movimento
         }
     }
     printf("\n");
@@ -159,13 +167,13 @@ int main(int argc, char **argv) {
         logexit("connect");
     }
 
-    printf("Conectado ao servidor %s:%s\n", argv[1], argv[2]);
+    //printf("Conectado ao servidor %s:%s\n", argv[1], argv[2]);
 
     struct action acao, resposta;
     while (1) {
         // Solicitar comando ao usuário
         memset(&acao, 0, sizeof(acao));
-        printf("Digite um comando ('start', 'map', 'up', 'down', 'left', 'right', 'hint', 'reset', 'exit'): ");
+        //printf("Digite um comando ('start', 'map', 'up', 'down', 'left', 'right', 'hint', 'reset', 'exit'): ");
         char comando[16];
         scanf("%s", comando);
 
@@ -191,7 +199,7 @@ int main(int argc, char **argv) {
         } else if (strcmp(comando, "exit") == 0) {
             acao.type = 7; // exit
             send(s, &acao, sizeof(acao), 0);
-            printf("Encerrando conexão...\n");
+            //printf("Encerrando conexão...\n");
             break;
         } else if (strcmp(comando, "map") == 0) {
             acao.type = 2; // map
@@ -224,19 +232,21 @@ int main(int argc, char **argv) {
         } else if (resposta.type == -3) {
             printf("error: you cannot go this way\n");
         } else if (acao.type == 2) { // Se o cliente enviou 'map'
-            printf("Mapa completo recebido:\n");
+            //printf("Mapa completo recebido:\n");
             imprimir_labirinto(resposta.board);
         } else if (acao.type == 3 && resposta.type == 4){
             imprimir_hint(resposta.moves);
         } else if (resposta.type == 4) { // Update padrão
             imprimir_movimentos(resposta.moves);
         } else if(resposta.type == 5) {
-            printf("Parabéns! Você chegou na saída do labirinto!\n");
+            //printf("Parabéns! Você chegou na saída do labirinto!\n");
+            printf("You escaped!\n");
             //Imprimir o labirinto completo revelado
             imprimirLabirintoVitoria(resposta.board);
-            break; // Opcional: encerrar o jogo após a vitória
+            //break; // Opcional: encerrar o jogo após a vitória
         } else if(resposta.type == 6) {
-            printf("Labirinto reiniciado!\n");
+            //printf("Labirinto reiniciado!\n");
+            imprimir_movimentos(resposta.moves);
         } else {
             printf("Resposta inesperada do servidor.\n");
         }
