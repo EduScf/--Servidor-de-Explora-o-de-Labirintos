@@ -369,6 +369,7 @@ int main(int argc, char **argv) {
     carregar_labirinto(argv[4]);       // Carregar o labirinto do arquivo
     marcar_como_desconhecido();       // Inicializar estado com '?'
     bool jogo_iniciado = false;       // Estado do jogo não iniciado ainda
+    bool jogo_vencido = false;        // Estado do jogo não vencido ainda
     
     // Configuração do socket do servidor
     struct sockaddr_storage storage;
@@ -428,6 +429,25 @@ int main(int argc, char **argv) {
 
             //printf("[log] received action type: %d\n", acao.type); // Retirado pois o professor não quer nesse formato
 
+            // Controle pós-vitória
+            if (jogo_vencido) {
+                if (acao.type == 6) { // Reset
+                    jogo_vencido = false;
+                    jogo_iniciado = true;
+                    processar_reset(csock);
+                } else if (acao.type == 7) { // Exit
+                    printf("client disconnected\n");
+                    break;
+                } else {
+                    // Responder erro para comandos inválidos
+                    struct action resposta;
+                    memset(&resposta, 0, sizeof(resposta));
+                    resposta.type = -2; // Inicie uma partida nova
+                    send(csock, &resposta, sizeof(resposta), 0);
+                } 
+                continue; // Pula para o próximo comando
+            }
+
             // Verificar estado do jogo antes de aceitar comandos específicos
            if (!jogo_iniciado && (acao.type == 1 || acao.type == 2 || acao.type == 3 || acao.type == 6)) {
                 struct action resposta;
@@ -450,6 +470,9 @@ int main(int argc, char **argv) {
                 send(csock, &resposta, sizeof(resposta), 0);
             } else if (acao.type == 1) { // move
                 processar_move(&acao, csock, jogo_iniciado);
+                if (labirinto_completo[jogador_x][jogador_y] == 3) {
+                    jogo_vencido = true;
+                }
             } else if (acao.type == 2) { // map
                 processar_map(csock);
             } else if (acao.type == 3) { // hint
